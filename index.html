@@ -1,0 +1,244 @@
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: rgb(0, 0, 0);
+      font-size: 12px;
+      overflow: hidden; /* Removes scrollbars */
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      font-family: 'Poppins', sans-serif;
+      color: #cccccc;
+    }
+
+    #editor-container, .tab-header, .tab {
+      background-color: rgb(0, 0, 0) !important;
+    }
+
+    .tab-header {
+      display: flex;
+      overflow-x: auto;
+      align-items: center;
+      padding: 0;
+      margin-top: 10px;
+      max-height: 60px;
+      border-bottom: 1px solid #333;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      padding: 5px 15px;
+      cursor: pointer;
+      user-select: none;
+      border-right: 1px solid #333;
+      background-color: rgb(30, 30, 40);
+      border-radius: 5px 5px 0 0;
+      margin-right: 3px;
+      transition: all 0.3s ease-in-out;
+      font-size: 12px;
+    }
+
+    .tab:hover {
+      background-color: rgb(40, 40, 50);
+    }
+
+    .tab.active {
+      background-color: rgb(50, 50, 70);
+      color: rgb(145, 145, 145);
+    }
+
+    .close-btn {
+      margin-left: 8px;
+      background: none;
+      border: none;
+      color: #cccccc;
+      cursor: pointer;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .close-btn:hover {
+      color: #ff0e00;
+    }
+
+    .add-tab {
+      padding: 5px 15px;
+      cursor: pointer;
+      user-select: none;
+      background-color: rgb(30, 30, 40);
+      border-left: 1px solid #333;
+      border-radius: 5px 5px 0 0;
+      transition: background-color 0.3s;
+      font-size: 12px;
+    }
+
+    .add-tab:hover {
+      background-color: rgb(40, 40, 50);
+    }
+
+    #editor-container {
+      flex-grow: 1;
+      height: calc(100vh - 92px);
+      overflow: auto;
+      scrollbar-width: none; /* Firefox */
+    }
+
+    #editor-container::-webkit-scrollbar {
+      display: none; /* Chrome, Safari */
+    }
+  </style>
+</head>
+<body>
+  <div class="tab-header" id="tabHeader"></div>
+  <div id="editor-container"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs/loader.js"></script>
+  <script>
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs' }});
+
+    let tabs = [];
+    let tabCount = 0;
+    let activeTabId = null;
+    let editor;
+
+    function resizeEditor() {
+      const editorContainer = document.getElementById('editor-container');
+      editorContainer.style.height = `${window.innerHeight - 92}px`;
+      editor.layout();
+    }
+
+    window.addEventListener('resize', resizeEditor);
+    window.addEventListener('load', resizeEditor);
+
+function createTab(name, content) {
+  let existingNumbers = tabs.map(tab => parseInt(tab.name.match(/\d+/)?.[0] || 0));
+  let newNumber = 1;
+  while (existingNumbers.includes(newNumber)) newNumber++;
+
+  const tabId = 'tab-' + newNumber;
+  const tabData = { id: tabId, name: `tab${newNumber}.lua`, content: content };
+  tabs.push(tabData);
+  renderTabs();
+  setTimeout(() => selectTab(tabId), 50);
+}
+
+
+    function renderTabs() {
+      const tabHeader = document.getElementById('tabHeader');
+      tabHeader.innerHTML = '';
+
+      tabs.forEach(tab => {
+        const tabDiv = document.createElement('div');
+        tabDiv.className = 'tab' + (tab.id === activeTabId ? ' active' : '');
+        tabDiv.dataset.tabId = tab.id;
+        tabDiv.onclick = (e) => {
+          if (e.target.classList.contains('close-btn')) return;
+          selectTab(tab.id);
+        };
+
+        const tabText = document.createElement('span');
+        tabText.textContent = tab.name;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-btn';
+        closeBtn.innerHTML = '×';
+        closeBtn.onclick = (e) => {
+          e.stopPropagation();
+          closeTab(tab.id);
+        };
+
+        tabDiv.appendChild(tabText);
+        tabDiv.appendChild(closeBtn);
+        tabHeader.appendChild(tabDiv);
+      });
+
+      const addTabBtn = document.createElement('div');
+      addTabBtn.className = 'tab add-tab';
+      addTabBtn.innerHTML = '+';
+      addTabBtn.onclick = () => {
+        createTab('tab' + (tabs.length + 1) + '.lua', '');
+      };
+      tabHeader.appendChild(addTabBtn);
+    }
+
+    function selectTab(tabId) {
+      if (activeTabId) {
+        const currentTab = tabs.find(t => t.id === activeTabId);
+        if (currentTab) {
+          currentTab.content = editor.getValue();
+        }
+      }
+      activeTabId = tabId;
+      const tabData = tabs.find(t => t.id === tabId);
+      if (tabData) {
+        editor.setValue(tabData.content);
+      }
+      renderTabs();
+    }
+
+    function closeTab(tabId) {
+      tabs = tabs.filter(t => t.id !== tabId);
+      if (activeTabId === tabId) {
+        activeTabId = tabs.length > 0 ? tabs[0].id : null;
+      }
+      renderTabs();
+      editor.setValue(activeTabId ? tabs.find(t => t.id === activeTabId).content : '');
+    }
+
+    require(['vs/editor/editor.main'], function() {
+      monaco.editor.defineTheme('custom-theme', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [{ token: '', foreground: 'CCCCCC', background: '14141e' }],
+        colors: { 'editor.background': '#000000' }
+      });
+
+      monaco.editor.setTheme('custom-theme');
+
+      editor = monaco.editor.create(document.getElementById('editor-container'), {
+        value: '',
+        language: 'lua',
+        theme: 'custom-theme',
+        minimap: { enabled: false }
+      });
+
+      editor.onDidChangeModelContent(function() {
+        const tabData = tabs.find(t => t.id === activeTabId);
+        if (tabData) {
+          tabData.content = editor.getValue();
+        }
+      });
+
+      setInterval(() => {
+        localStorage.setItem('savedTabs', JSON.stringify(tabs));
+        localStorage.setItem('activeTabId', activeTabId);
+      }, 500);
+
+      const savedTabs = JSON.parse(localStorage.getItem('savedTabs'));
+      const savedActiveTabId = localStorage.getItem('activeTabId');
+
+      if (savedTabs && savedTabs.length > 0) {
+        tabs = savedTabs;
+        tabCount = tabs.length;
+        renderTabs();
+        selectTab(savedActiveTabId || tabs[0].id);
+      } else {
+        createTab('tab1.lua', '');
+      }
+
+      resizeEditor(); 
+    });
+  </script>
+</body>
+</html>
