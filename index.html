@@ -104,47 +104,60 @@
   <div id="editor-container"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs/loader.js"></script>
-  <script>
-    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs' }});
+<script>
+require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs' }});
 
-    let tabs = [];
-    let tabCount = 0;
-    let activeTabId = null;
-    let editor;
+let tabs = [];
+let tabCount = 0;
+let activeTabId = null;
+let editor;
 
-    function resizeEditor() {
-      const editorContainer = document.getElementById('editor-container');
-      editorContainer.style.height = `${window.innerHeight - 92}px`;
-      editor.layout();
+function resizeEditor() {
+    const editorContainer = document.getElementById('editor-container');
+    if (editorContainer && editor) {
+        editorContainer.style.height = `${window.innerHeight - 92}px`;
+        editor.layout();
     }
-
-    window.addEventListener('resize', resizeEditor);
-    window.addEventListener('load', resizeEditor);
-
-function createTab(name, content) {
-  let existingNumbers = tabs.map(tab => parseInt(tab.name.match(/\d+/)?.[0] || 0));
-  let newNumber = 1;
-  while (existingNumbers.includes(newNumber)) newNumber++;
-
-  const tabId = 'tab-' + newNumber;
-  const tabData = { id: tabId, name: `tab${newNumber}.lua`, content: content };
-  tabs.push(tabData);
-  renderTabs();
-  setTimeout(() => selectTab(tabId), 50);
 }
 
+window.addEventListener('resize', resizeEditor);
+window.addEventListener('load', resizeEditor);
 
-    function renderTabs() {
-      const tabHeader = document.getElementById('tabHeader');
-      tabHeader.innerHTML = '';
+function createTab(name = '', content = '') {
+    try {
+        let existingNumbers = tabs.map(tab => parseInt(tab.name.match(/\d+/)?.[0] || 0));
+        let newNumber = Math.max(1, ...existingNumbers) + 1;
+        
+        const tabId = `tab-${newNumber}`;
+        const tabData = { 
+            id: tabId, 
+            name: name || `tab${newNumber}.lua`, 
+            content: content 
+        };
+        
+        tabs.push(tabData);
+        tabCount++;
+        renderTabs();
+        setTimeout(() => selectTab(tabId), 50);
+    } catch (error) {
+        console.error('Error creating tab:', error);
+    }
+}
 
-      tabs.forEach(tab => {
+function renderTabs() {
+    const tabHeader = document.getElementById('tabHeader');
+    if (!tabHeader) return;
+
+    tabHeader.innerHTML = '';
+
+    tabs.forEach(tab => {
         const tabDiv = document.createElement('div');
-        tabDiv.className = 'tab' + (tab.id === activeTabId ? ' active' : '');
+        tabDiv.className = `tab${tab.id === activeTabId ? ' active' : ''}`;
         tabDiv.dataset.tabId = tab.id;
         tabDiv.onclick = (e) => {
-          if (e.target.classList.contains('close-btn')) return;
-          selectTab(tab.id);
+            if (!e.target.classList.contains('close-btn')) {
+                selectTab(tab.id);
+            }
         };
 
         const tabText = document.createElement('span');
@@ -154,91 +167,171 @@ function createTab(name, content) {
         closeBtn.className = 'close-btn';
         closeBtn.innerHTML = '×';
         closeBtn.onclick = (e) => {
-          e.stopPropagation();
-          closeTab(tab.id);
+            e.stopPropagation();
+            closeTab(tab.id);
         };
 
         tabDiv.appendChild(tabText);
         tabDiv.appendChild(closeBtn);
         tabHeader.appendChild(tabDiv);
-      });
-
-      const addTabBtn = document.createElement('div');
-      addTabBtn.className = 'tab add-tab';
-      addTabBtn.innerHTML = '+';
-      addTabBtn.onclick = () => {
-        createTab('tab' + (tabs.length + 1) + '.lua', '');
-      };
-      tabHeader.appendChild(addTabBtn);
-    }
-
-    function selectTab(tabId) {
-      if (activeTabId) {
-        const currentTab = tabs.find(t => t.id === activeTabId);
-        if (currentTab) {
-          currentTab.content = editor.getValue();
-        }
-      }
-      activeTabId = tabId;
-      const tabData = tabs.find(t => t.id === tabId);
-      if (tabData) {
-        editor.setValue(tabData.content);
-      }
-      renderTabs();
-    }
-
-    function closeTab(tabId) {
-      tabs = tabs.filter(t => t.id !== tabId);
-      if (activeTabId === tabId) {
-        activeTabId = tabs.length > 0 ? tabs[0].id : null;
-      }
-      renderTabs();
-      editor.setValue(activeTabId ? tabs.find(t => t.id === activeTabId).content : '');
-    }
-
-    require(['vs/editor/editor.main'], function() {
-      monaco.editor.defineTheme('custom-theme', {
-        base: 'vs-dark',
-        inherit: true,
-        rules: [{ token: '', foreground: 'CCCCCC', background: '14141e' }],
-        colors: { 'editor.background': '#000000' }
-      });
-
-      monaco.editor.setTheme('custom-theme');
-
-      editor = monaco.editor.create(document.getElementById('editor-container'), {
-        value: '',
-        language: 'lua',
-        theme: 'custom-theme',
-        minimap: { enabled: false }
-      });
-
-      editor.onDidChangeModelContent(function() {
-        const tabData = tabs.find(t => t.id === activeTabId);
-        if (tabData) {
-          tabData.content = editor.getValue();
-        }
-      });
-
-      setInterval(() => {
-        localStorage.setItem('savedTabs', JSON.stringify(tabs));
-        localStorage.setItem('activeTabId', activeTabId);
-      }, 500);
-
-      const savedTabs = JSON.parse(localStorage.getItem('savedTabs'));
-      const savedActiveTabId = localStorage.getItem('activeTabId');
-
-      if (savedTabs && savedTabs.length > 0) {
-        tabs = savedTabs;
-        tabCount = tabs.length;
-        renderTabs();
-        selectTab(savedActiveTabId || tabs[0].id);
-      } else {
-        createTab('tab1.lua', '');
-      }
-
-      resizeEditor(); 
     });
-  </script>
+
+    const addTabBtn = document.createElement('div');
+    addTabBtn.className = 'tab add-tab';
+    addTabBtn.innerHTML = '+';
+    addTabBtn.onclick = () => createTab();
+    tabHeader.appendChild(addTabBtn);
+}
+
+function selectTab(tabId) {
+    try {
+        if (activeTabId && editor) {
+            const currentTab = tabs.find(t => t.id === activeTabId);
+            if (currentTab) {
+                currentTab.content = editor.getValue();
+            }
+        }
+        
+        activeTabId = tabId;
+        const tabData = tabs.find(t => t.id === tabId);
+        if (tabData && editor) {
+            editor.setValue(tabData.content);
+        }
+        renderTabs();
+    } catch (error) {
+        console.error('Error selecting tab:', error);
+    }
+}
+
+function closeTab(tabId) {
+    try {
+        tabs = tabs.filter(t => t.id !== tabId);
+        if (activeTabId === tabId) {
+            activeTabId = tabs.length > 0 ? tabs[0].id : null;
+        }
+        renderTabs();
+        if (activeTabId && editor) {
+            editor.setValue(tabs.find(t => t.id === activeTabId)?.content || '');
+        } else if (editor) {
+            editor.setValue('');
+        }
+    } catch (error) {
+        console.error('Error closing tab:', error);
+    }
+}
+
+require(['vs/editor/editor.main'], function() {
+    try {
+        monaco.editor.defineTheme('custom-theme', {
+            base: 'vs-dark',
+            inherit: true,
+rules: [
+				{ token: 'variable.language.self', foreground: 'c678dd' },
+					{ token: 'variable.parameter.variadic', foreground: 'c678dd' },
+					{ token: 'variable.parameter.function', foreground: 'c678dd' },
+					{ token: 'variable.other.constant', foreground: 'c678dd' },
+					{ token: 'variable.property', foreground: 'c678dd' },
+					{ token: 'variable.object.property', foreground: 'c678dd' },
+
+					{ token: 'keyword', foreground: 'c678dd' },
+					{ token: 'keyword.local', foreground: 'c678dd', fontStyle: 'c678dd' },
+					{ token: 'keyword.operator', foreground: 'c678dd' },
+					{ token: 'keyword.operator.type.annotation', foreground: 'c678dd' },
+					{ token: 'keyword.operator.typedef.annotation', foreground: 'c678dd' },
+					{ token: 'keyword.control.export', foreground: 'c678dd', fontStyle: 'bold' },
+
+					{ token: 'operator', foreground: '529875' },
+					{ token: 'operator.type', foreground: '529875' },
+					{ token: 'operator.special', foreground: '529875' },
+
+					{ token: 'entity.name.type.alias', foreground: 'ffffff' },
+					{ token: 'entity.name.function', foreground: '61afef' },
+
+					{ token: 'global', foreground: '61afef', fontStyle: 'bold' },
+
+					{ token: 'storage.type', foreground: 'ffffff' },
+
+					{ token: 'comment', foreground: '5c6370', fontStyle: 'italic' },
+					{ token: 'comment.highlight.title', foreground: '5c6370', fontStyle: 'italic' },
+					{ token: 'comment.highlight.name', foreground: '5c6370', fontStyle: 'italic' },
+					{ token: 'comment.delimiter.modifier', foreground: '5c6370', fontStyle: 'italic' },
+					{ token: 'comment.highlight.modifier', foreground: '5c6370', fontStyle: 'italic' },
+					{ token: 'comment.highlight.descriptor', foreground: '5c6370', fontStyle: 'italic' },
+
+					{ token: 'delimiter.longstring', foreground: 'f0f0f0' },
+					{ token: 'delimiter.bracket', foreground: 'f0f0f0' },
+					{ token: 'delimiter.array', foreground: 'f0f0f0' },
+					{ token: 'delimiter.parenthesis', foreground: 'f0f0f0' },
+					{ token: 'delimiter', foreground: 'f0f0f0' },
+
+					{ token: 'string', foreground: '98c379' },
+					{ token: 'longstring', foreground: '98c379' },
+					{ token: 'string.delimeter', foreground: '98c379' },
+					{ token: 'string.escape', foreground: '98c379' },
+
+					{ token: 'punctuation.separator.arguments', foreground: 'ffffff' },
+					{ token: 'punctuation.separator.parameter', foreground: 'ffffff' },
+					{ token: 'punctuation.separator.table', foreground: 'ffffff' },
+					{ token: 'punctuation.definition.block', foreground: 'ffffff' },
+					{ token: 'punctuation.definition.parameters', foreground: 'ffffff' },
+					{ token: 'punctuation.definition.typeparameters', foreground: 'ffffff' },
+
+					{ token: 'constant.language', foreground: 'd19a66' },
+					{ token: 'number', foreground: 'd19a66' },
+					{ token: 'constants', foreground: 'd19a66' },
+
+					{ token: 'support.function', foreground: '61afef' },
+					{ token: 'support.function.library', foreground: '61afef' },
+					{ token: 'support.type', foreground: '61afef' },
+                ],
+                colors: {
+                    'editor.background': '#000000',
+                    'minimap.background': '#000000'
+                }
+            });
+        editor = monaco.editor.create(document.getElementById('editor-container'), {
+            value: '',
+            language: 'lua',
+            theme: 'custom-theme',
+            minimap: { enabled: false },
+            automaticLayout: true
+        });
+
+        editor.onDidChangeModelContent(() => {
+            const tabData = tabs.find(t => t.id === activeTabId);
+            if (tabData) {
+                tabData.content = editor.getValue();
+            }
+        });
+
+        // Auto-save functionality
+        setInterval(() => {
+            try {
+                localStorage.setItem('savedTabs', JSON.stringify(tabs));
+                localStorage.setItem('activeTabId', activeTabId);
+            } catch (error) {
+                console.error('Error saving to localStorage:', error);
+            }
+        }, 500);
+
+        // Load saved tabs
+        const savedTabs = JSON.parse(localStorage.getItem('savedTabs') || '[]');
+        const savedActiveTabId = localStorage.getItem('activeTabId');
+
+        if (savedTabs.length > 0) {
+            tabs = savedTabs;
+            tabCount = tabs.length;
+            renderTabs();
+            selectTab(savedActiveTabId || tabs[0].id);
+        } else {
+            createTab('tab1.lua', '');
+        }
+
+        resizeEditor();
+    } catch (error) {
+        console.error('Error initializing editor:', error);
+    }
+});
+</script>
 </body>
 </html>
