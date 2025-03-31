@@ -1,4 +1,3 @@
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,23 +38,23 @@
       padding: 5px 10px;
       background-color: #1a1a1a;
       border-bottom: 2px solid #333;
-      overflow-x: auto;
+      overflow-x: hidden; /* Changed from auto to hidden */
       white-space: nowrap;
     }
 
-.tab {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.5px 2px; /* Zmniejszono padding z 8px 15px na 5px 10px */
-  margin: 0 3px;
-  cursor: pointer;
-  background-color: #2a2a2a;
-  border-radius: 8px 8px 0 0;
-  transition: all 0.3s ease;
-  min-width: 130px; /* Zmniejszono z 130px na 100px */
-  max-width: 130px; /* Zmniejszono z 130px na 100px */
-  border: 1px solid #444;
-}
+    .tab {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 2px; /* Changed to 2px padding */
+      margin: 0 3px;
+      cursor: pointer;
+      background-color: #2a2a2a;
+      border-radius: 8px 8px 0 0;
+      transition: all 0.3s ease;
+      min-width: 130px;
+      max-width: 130px;
+      border: 1px solid #444;
+    }
 
     .tab:hover {
       background-color: #3a3a3a;
@@ -155,6 +154,14 @@
         loadingScreen.classList.add('fade-out');
         setTimeout(() => loadingScreen.style.display = 'none', 500);
       }, 1000);
+      
+      // Add wheel scroll functionality
+      const tabHeader = document.getElementById('tabHeader');
+      tabHeader.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        tabHeader.scrollLeft += e.deltaY * 0.5; // Adjust scroll speed by changing multiplier
+      });
+      
       resizeEditor();
     });
 
@@ -289,36 +296,21 @@
         monaco.languages.setMonarchTokensProvider('lua', {
           tokenizer: {
             root: [
-              // Roblox global variables
               [/\b(_G|_VERSION|Enum|game|plugin|shared|script|workspace|DebuggerManager|elapsedTime|LoadLibrary|PluginManager|settings|tick|time|typeof|UserSettings|HumanoidRootPart)\b/, 'roblox-global'],
-              // Lua keywords
               [/\b(and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while)\b/, 'keyword'],
-              // Math functions
               [/\bmath\.(abs|acos|asin|atan|atan2|ceil|cos|cosh|deg|exp|floor|fmod|frexp|huge|ldexp|log|max|min|modf|pi|pow|rad|random|randomseed|sin|sinh|sqrt|tan|tanh)\b/, 'math-function'],
-              // Table functions
               [/\btable\.(concat|foreach|foreachi|sort|insert|remove)\b/, 'table-function'],
-              // Roblox constructors
               [/\b(Color3|Instance|BrickColor|Vector3|Vector2)\.new\b/, 'roblox-constructor'],
-              // Debug functions
               [/\bdebug\.getinfo\b/, 'debug-function'],
-              // String functions
               [/\bstring\.(byte|char|dump|find|format|gmatch|gsub|len|lower|match|rep|reverse|sub|upper)\b/, 'string-function'],
-              // Coroutine functions
               [/\bcoroutine\.(create|resume|running|status|wrap|yield)\b/, 'coroutine-function'],
-              // Roblox classes
               [/\b(Drawing|debug|Instance|Color3|Vector3|Vector2|BrickColor|math|table|string|coroutine|Humanoid|ClickDetector|LocalScript|Model|ModuleScript|Mouse|Part|Script|Tool|RunService|UserInputService|Workspace|ReplicatedFirst|SoundService|Character|CoreGui|ReplicatedStorage|Lighting|Players|PlayerGui|PlayerScript|LocalPlayer|Parent)\b/, 'roblox-class'],
-              // Lua/Roblox utility functions (including loadstring)
               [/\b(print|warn|wait|info|printidentity|assert|collectgarbage|error|getfenv|getmetatable|setmetatable|ipairs|loadfile|loadstring|newproxy|next|pairs|pcall|spawn|rawequal|rawget|rawset|select|tonumber|tostring|type|unpack|xpcall|delay|stats)\b/, 'utility-function'],
-              // Roblox methods (with colons, including HttpGet)
-[/(?<=:)(Remove|BreakJoints|GetChildren|FindFirstChild|FireServer|InvokeServer|ClearAllChildren|Clone|Destroy|FindFirstAncestor|FindFirstAncestorOfClass|FindFirstAncestorWhichIsA|FindFirstChildOfClass|FindFirstChildWhichIsA|GetDebugId|GetDescendants|GetFullName|IsA|GetPropertyChangedSignal|IsAncestorOf|IsDescendantOf|WaitForChild|Connect|AncestryChanged|Changed|ChildAdded|ChildRemoved|DescendantAdded|DescendantRemoving|GetService|GetObjects|HttpGet|Wait)\b/, 'roblox-method'],
-              // Roblox properties
+              [/(?<=:)(Remove|BreakJoints|GetChildren|FindFirstChild|FireServer|InvokeServer|ClearAllChildren|Clone|Destroy|FindFirstAncestor|FindFirstAncestorOfClass|FindFirstAncestorWhichIsA|FindFirstChildOfClass|FindFirstChildWhichIsA|GetDebugId|GetDescendants|GetFullName|IsA|GetPropertyChangedSignal|IsAncestorOf|IsDescendantOf|WaitForChild|Connect|AncestryChanged|Changed|ChildAdded|ChildRemoved|DescendantAdded|DescendantRemoving|GetService|GetObjects|HttpGet|Wait)\b/, 'roblox-method'],
               [/\b(Visible|Color|Transparency|Thickness|From|To|Text|Size|Center|Outline|OutlineColor|Position|TextBounds|Font|Data|Rounding|NumSides|Radius|Filled|PointA|PointB|PointC|PointD)\b/, 'roblox-property'],
-              // Strings
               [/"[^"]*"/, 'string'],
               [/'[^']*'/, 'string'],
-              // Numbers
               [/\d+/, 'number'],
-              // Comments
               [/--.*$/, 'comment']
             ]
           }
@@ -328,27 +320,27 @@
           base: 'vs-dark',
           inherit: true,
           rules: [
-            { token: 'keyword', foreground: 'c678dd' }, // Purple for Lua keywords
-            { token: 'string', foreground: '98c379' }, // Green for strings
-            { token: 'number', foreground: 'd19a66' }, // Orange for numbers
-            { token: 'comment', foreground: '5c6370', fontStyle: 'italic' }, // Gray for comments
-            { token: 'operator', foreground: '529875' }, // Teal for operators
-            { token: 'roblox-global', foreground: 'e06c75' }, // Red for Roblox globals
-            { token: 'math-function', foreground: '61afef' }, // Blue for math functions
-            { token: 'table-function', foreground: '61afef' }, // Blue for table functions
-            { token: 'roblox-constructor', foreground: 'd19a66' }, // Orange for Roblox constructors
-            { token: 'debug-function', foreground: 'e5c07b' }, // Yellow for debug functions
-            { token: 'string-function', foreground: '61afef' }, // Blue for string functions
-            { token: 'coroutine-function', foreground: '61afef' }, // Blue for coroutine functions
-            { token: 'roblox-class', foreground: 'e06c75' }, // Red for Roblox classes
-            { token: 'utility-function', foreground: 'e5c07b' }, // Yellow for utility functions (print, warn, loadstring, etc.)
-            { token: 'roblox-method', foreground: 'c678dd' }, // Purple for Roblox methods (including HttpGet)
-            { token: 'roblox-property', foreground: '98c379' } // Green for Roblox properties
+            { token: 'keyword', foreground: 'c678dd' },
+            { token: 'string', foreground: '98c379' },
+            { token: 'number', foreground: 'd19a66' },
+            { token: 'comment', foreground: '5c6370', fontStyle: 'italic' },
+            { token: 'operator', foreground: '529875' },
+            { token: 'roblox-global', foreground: 'e06c75' },
+            { token: 'math-function', foreground: '61afef' },
+            { token: 'table-function', foreground: '61afef' },
+            { token: 'roblox-constructor', foreground: 'd19a66' },
+            { token: 'debug-function', foreground: 'e5c07b' },
+            { token: 'string-function', foreground: '61afef' },
+            { token: 'coroutine-function', foreground: '61afef' },
+            { token: 'roblox-class', foreground: 'e06c75' },
+            { token: 'utility-function', foreground: 'e5c07b' },
+            { token: 'roblox-method', foreground: 'c678dd' },
+            { token: 'roblox-property', foreground: '98c379' }
           ],
           colors: {
             'editor.background': '#000000',
             'minimap.background': '#000000',
-            'editor.foreground': '#ffffff' // Ensure default text is white
+            'editor.foreground': '#ffffff'
           }
         });
 
