@@ -25,7 +25,7 @@
       justify-content: center;
       align-items: center;
       z-index: 9999;
-      transition: opacity 1s;
+      transition: opacity 0.5s;
     }
 
     #loading-screen.fade-out {
@@ -51,18 +51,11 @@
       cursor: pointer;
       background-color: #000000;
       border-radius: 4px 4px 0 0;
-      transition: all 0.3s ease;
-      min-width: 90px; /* Minimalna szerokość dla kolejnych tabów */
+      transition: background-color 0.3s ease; /* Ograniczamy transition tylko do tła */
+      width: auto;
       border: 1px solid #cccccc;
       font-size: 12px;
       height: 20px;
-    }
-
-    /* Specjalna klasa dla pierwszego taba */
-    .tab:first-child {
-      min-width: auto; /* Usuwa minimalną szerokość */
-      width: auto; /* Dopasowuje szerokość do zawartości */
-      max-width: 120px; /* Maksymalna szerokość dla czytelności */
     }
 
     .tab:hover {
@@ -79,9 +72,6 @@
     .tab span {
       display: inline-block;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      flex-grow: 1;
       text-align: center;
     }
 
@@ -113,21 +103,26 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      width: 20px;
+      width: 24px;
       height: 20px;
       margin: 0 8px;
       cursor: pointer;
       background-color: #000000;
-      border-radius: 50%;
-      transition: all 0.3s ease;
-      font-size: 16px;
-      font-weight: 600;
+      border-radius: 40%;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Ograniczamy transition */
+      font-size: 18px;
+      font-weight: 800;
       border: 1px solid #cccccc;
+      line-height: 20px;
+      text-align: center;
+      position: relative; /* Izolacja od sąsiadujących elementów */
+      z-index: 1; /* Zapewniamy, że .add-tab jest "na wierzchu" */
     }
 
     .add-tab:hover {
       background-color: #1a1a1a;
-      transform: scale(1.1);
+      box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+      border: 1px solid #cccccc; /* Zapewniamy, że ramka się nie zmienia */
     }
 
     #editor-container {
