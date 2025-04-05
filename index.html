@@ -174,7 +174,7 @@
       resizeEditor();
     });
 
-    function createTab(name = '', content = '') {
+    function createTab(name = '', content = '-- NOTHING X HUB') {
       try {
         const existingNumbers = tabs.map(tab => {
           const match = tab.name.match(/script(\d+)\.lua/);
